@@ -31,26 +31,44 @@ import numpy as np
 import argparse
 import sys
 
+class Transform:
+   def __init__(self, obj):
+       self.i = obj['i'] if 'i' in obj else 0
+       self.scale = obj['scale'] if 'scale' in obj else 1
+       self.angle = obj['angle'] * np.pi / 180.0 if 'angle' in obj else 0
+       self.dx = obj['dx'] if 'dx' in obj else 0
+       self.dy = obj['dy'] if 'dy' in obj else 0
 
-def draw(self, inpt, gt, shape, tranform, color=255):
-   assert (inpt.shape == gt.shape)
 
-   new_shape = shape.copy().astype(np.float)
-   # Scale
-   new_shape *= tranform.scale
+transforms = []
 
-   # Rotation
-   tmp = new_shape.copy()
-   for i in [0, 1]:
-       new_shape[:, i] = np.cos(tranform.angle) * tmp[:, i] \
-                         - ((-1)** i) * np.sin(tranform.angle) * tmp[:, 1 - i]
+def draw(inpt, gt, shape, transform: Transform, color=255):
+    
+  shape = np.array(shape)
+  assert (inpt.shape == gt.shape)
 
-   #Shift
-   new_shape[:, 0] += tranform.dx
-   new_shape[:, 1] += tranform.dy
+  new_shape = shape.copy().astype(np.float)
+  
+  # Scale
+  new_shape *= transform.scale
+  
+  # Rotation
+  tmp = new_shape.copy()
+  for i in [0, 1]:
+     new_shape[:, i] = np.cos(transform.angle) * tmp[:, i] \
+                       - ((-1)** i) * np.sin(transform.angle) * tmp[:, 1 - i]
+  
+  #Shift
+  new_shape[:, 0] += transform.dx
+  new_shape[:, 1] += transform.dy
+  
+  cv2.fillPoly(gt, [new_shape.astype(np.int32)], color)
+  cv2.polylines(inpt, [new_shape.astype(np.int32)], True, color)
+  cv2.imshow("sas", inpt)
+  cv2.imshow("sas", gt)
+  if cv2.waitKey(0) & 0xFF == ord('q'):  
+    cv2.destroyAllWindows() 
 
-   cv2.fillPoly(gt, [new_shape.astype(np.int32)], color)
-   cv2.polylines(inpt, [new_shape.astype(np.int32)], True, color)
 
 
 # read and parse input file
@@ -80,7 +98,7 @@ def getAngle1(a, b, c):
 def getAngle2(a, b, c, d):
   ab = b - a
   cd = d - c
-
+  
   cosine_angle = np.dot(ab, cd) / (np.linalg.norm(ab) * np.linalg.norm(cd))
   angle = np.arccos(cosine_angle)
   return np.degrees(angle)
@@ -133,7 +151,7 @@ def findTrasform(i, segment1, segment2):
   res = [i]
   length1 = segmentLength(segment1)
   length2 = segmentLength(segment2)
-
+  
   scale = length2/length1
   segment1[1][0] *= scale
   segment1[1][1] *= scale
@@ -142,7 +160,7 @@ def findTrasform(i, segment1, segment2):
   # print(segment2)
 
   # angle between segments
-  angle = getAngle2(segment1[0], segment1[1], segment2[0], segment2[1])
+  angle = getAngle2(segment2[0], segment2[1], segment1[0], segment1[1])
   # print(angle)
   #second_try_angle = 180 - angle
 
@@ -150,20 +168,40 @@ def findTrasform(i, segment1, segment2):
 
   c, s = np.cos( angle*np.pi/180. ), np.sin(angle*np.pi/180.)
   # print(c,s)
-  vec=[0,1]
   rot_segment1 = [[segment1[0][0]*c+segment1[0][1]*s,-segment1[0][0]*s+segment1[0][1]*c], [segment1[1][0]*c+segment1[1][1]*s,-segment1[1][0]*s+segment1[1][1]*c]]
-  # print(rot_segment1) 
+  # print(segment2)
+  # print(rot_segment1)
 
-  shift_x = segment2[0][0] - segment1[0][0]
-  shift_y = segment2[0][1] - segment1[0][1]
+  shift_x = segment2[0][0] - rot_segment1[0][0]
+  shift_y = segment2[0][1] - rot_segment1[0][1]
   # print(shift_x,shift_y)
-  # here we can check shifts by applying them to second points of segments
-  # <write checking code pleaaase>
+
+  #bruteforce
+  if(not isclose(rot_segment1[1][0]+shift_x, segment2[1][0], 5) or not isclose(rot_segment1[1][1] + shift_y, segment2[1][1], 5)):
+    # print("bruteforce1")
+    angle = -angle
+    c, s = np.cos( angle*np.pi/180. ), np.sin(angle*np.pi/180.)
+    # print(c,s)
+    rot_segment1 = [[segment1[0][0]*c+segment1[0][1]*s,-segment1[0][0]*s+segment1[0][1]*c], [segment1[1][0]*c+segment1[1][1]*s,-segment1[1][0]*s+segment1[1][1]*c]]
+    shift_x = segment2[0][0] - rot_segment1[0][0]
+    shift_y = segment2[0][1] - rot_segment1[0][1]
 
 
+  if(not isclose(rot_segment1[1][0]+shift_x, segment2[1][0], 5) or not isclose(rot_segment1[1][1] + shift_y, segment2[1][1], 5)):
+    # print("bruteforce2")
+    angle = 180-angle
+    c, s = np.cos( angle*np.pi/180. ), np.sin(angle*np.pi/180.)
+    # print(c,s)
+    rot_segment1 = [[segment1[0][0]*c+segment1[0][1]*s,-segment1[0][0]*s+segment1[0][1]*c], [segment1[1][0]*c+segment1[1][1]*s,-segment1[1][0]*s+segment1[1][1]*c]]
+    shift_x = segment2[0][0] - rot_segment1[0][0]
+    shift_y = segment2[0][1] - rot_segment1[0][1]
 
+
+  angle = -angle
   # print("_____trans_end______")
 
+  res_dict = {'dx' : shift_x, 'dy' : shift_y, 'scale' : scale, 'angle' : angle, 'i' : i}
+  transforms.append(Transform(res_dict))
   return [i, shift_x, shift_y, scale, angle]
 
 
@@ -224,7 +262,7 @@ for y in range(0, h):
           y = arr_i[non_zero_arr[0,0,0]][0]
         if len(non_zero_arr) == 0:
           img[y, x] = 0
-
+      
       x = save_x
       y = save_y
 
@@ -259,13 +297,13 @@ for cnt in contours :
         approx = cv2.approxPolyDP(cnt,  
                                   0.009 * cv2.arcLength(cnt, True), True) 
         # print("_________")
-        #print(area)
+        # print(area)
         for poly in approx:
           for vert in poly:
             # since approxPolyDP use external contour of shape:
             vert[0] -= 1
             vert[1] -= 1
-        #print(approx)
+        # print(approx)
         #cv2.drawContours(img2, [approx], 0, (0, 0, 255), 1)
         approx_angles = []
 
@@ -285,7 +323,7 @@ for cnt in contours :
             # print(basis_polygons)
             # print(approx)
             approx = np.roll(approx,res[0], axis=0)
-
+            
             # print(approx)
 
             #now we are ready to find two corresponding segments in each polygon
@@ -305,10 +343,25 @@ for i in range (0,M):
   f.write("%i, %f, %f, %f, %f\n" % (results[i][0], results[i][1], results[i][2], results[i][3], results[i][4]))
 f.close()
 """
+
+
+# print(len(transforms))
+# print("basis_polygons")
+# print(basis_polygons)
+for trans in transforms:
+  b_p = []
+  for i in range(len(basis_polygons[trans.i])-1):
+    # print(i)
+    b_p.append([basis_polygons[trans.i][i], basis_polygons[trans.i][i+1]])
+    i += 1
+  # print("B_P")
+  # print(b_p)
+  #draw(inpt = img, gt = img, shape = b_p, transform = trans)
+
+
 sys.stdout.write("%i\n"%M)
 for i in range (0,M):
   sys.stdout.write("%i, %f, %f, %f, %f\n" % (results[i][0], results[i][1], results[i][2], results[i][3], results[i][4]))
-
 
 """
 # Showing the image along with outlined arrow. 
