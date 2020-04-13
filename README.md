@@ -18,9 +18,17 @@ The program should output the number M - the number of detected primitives, and 
 # Algorithm
 
 
-- Input image preprocessed by a filter that blacks each pixel that doesn't have at least two white neighbors (include diagonally neighbors).
+1. Input image preprocessed by a filter that blacks each pixel that doesn't have at least two white neighbors (include diagonally neighbors):
+  1. Go through all the pixels of the image.
+  * As soon as a pixel that has less than two white neighbors is found, blacked it and go to the white neighbor (if possible), remembering the original position. 
+  * Continue to shade the pixels and move on until the neighbor's count will become zero or more or equal to two.
+  * Return to the position remembered at the very beginning and continue to iterate.
 - The result image processed by canny operator to get list of contours.
 - Each contour with area more that 1 is approximated by polygon.
 - For each basis polygons (polygons from text file) and for approximated polygon arrays of angles computed
 - by shifting and reversing arrays of angles, a decision of polygon similarity is taken
-- if polygons are similar, then two corresponding segments are taken from each of them and linear transform is computed
+- if polygons are similar, then a scale, angle, and axis shifts are computed:
+  1. Compute area as square root of the area ratio of polygons.
+  2. By combining the centroids of the polygons is the angle of rotation.
+  3. After finding the angle, the base polygon is rotated by the found angle relative to the point (0,0).
+  4. Transfer is calculated as a vector between the centroids.
