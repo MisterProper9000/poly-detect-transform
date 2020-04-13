@@ -59,22 +59,22 @@ def draw(inpt, gt, shape, transform: Transform, color=255):
     
   shape = np.array(shape)
   assert (inpt.shape == gt.shape)
-  print("_______draw_________", file = log)
+  #print("_______draw_________", file = log)
   new_shape = shape.copy().astype(np.float)
-  print("new_shape", new_shape, file = log)
+  #print("new_shape", new_shape, file = log)
   # Scale
   new_shape *= transform.scale
-  print("scale new shape", new_shape, file = log)
+  #print("scale new shape", new_shape, file = log)
   # Rotation
   tmp = new_shape.copy()
   for i in [0, 1]:
      new_shape[:, i] = np.cos(transform.angle) * tmp[:, i] \
                        - ((-1)** i) * np.sin(transform.angle) * tmp[:, 1 - i]
-  print("rotate new shape", new_shape, file = log)
+  #print("rotate new shape", new_shape, file = log)
   #Shift
   new_shape[:, 0] += transform.dx
   new_shape[:, 1] += transform.dy
-  print("shift new shape", new_shape, file = log)
+  #print("shift new shape", new_shape, file = log)
   
   cv2.fillPoly(gt, [new_shape.astype(np.int32)], color)
   cv2.polylines(inpt, [new_shape.astype(np.int32)], True, color)
@@ -82,7 +82,7 @@ def draw(inpt, gt, shape, transform: Transform, color=255):
   #cv2.imshow("final_result", gt)
   if cv2.waitKey(0) & 0xFF == ord('q'):  
     cv2.destroyAllWindows() 
-  print("_____end_draw_______", file = log)
+  #print("_____end_draw_______", file = log)
 
 
 # read and parse input file
@@ -192,7 +192,7 @@ def find_angle(detected_polygon: Polygon, basis_polygon: Polygon, target_image):
   y = np.array(y) 
   y += shift_y
   shifted_scaled_basis_polygon = Polygon(zip(x,y))
-  print("shifted_scaled_basis_polygon", shifted_scaled_basis_polygon, file=log)
+  #print("shifted_scaled_basis_polygon", shifted_scaled_basis_polygon, file=log)
   for angle in range(0,360):
     rotated_shifted_scaled_basis_polygon = shapely.affinity.rotate(shifted_scaled_basis_polygon, angle, origin='centroid')
     x, y = rotated_shifted_scaled_basis_polygon.exterior.coords.xy
@@ -255,22 +255,22 @@ def find_angle(detected_polygon: Polygon, basis_polygon: Polygon, target_image):
 
 
 
-  print("founded angle and max_iou", angle_res, max_iou, file=log)
+  #print("founded angle and max_iou", angle_res, max_iou, file=log)
 
   return angle_res
 
 
 # finds shifts, scale and angle to make two segments equal
 def findTrasform(i, detected_polygon: Polygon, basis_polygon: Polygon, target_image):
-  print("_____trans______", file = log)
-  print("detected_polygon", detected_polygon, file=log)
-  print("basis_polygon", basis_polygon, file=log)
+  #print("_____trans______", file = log)
+  #print("detected_polygon", detected_polygon, file=log)
+  #print("basis_polygon", basis_polygon, file=log)
 
   res = [i]
   scale = np.sqrt(detected_polygon.area / basis_polygon.area)
   #apply scale
   x, y = basis_polygon.exterior.coords.xy
-  print()
+  #print()
   x = np.array(x)
   x *= scale
   y = np.array(y)
@@ -279,7 +279,7 @@ def findTrasform(i, detected_polygon: Polygon, basis_polygon: Polygon, target_im
   
   draw_polygon(target_image, scaled_basis_polygon)
 
-  print("scaled_basis_polygon", scaled_basis_polygon, file=log)
+  #print("scaled_basis_polygon", scaled_basis_polygon, file=log)
 
   sub_target_image = draw_polygon(target_image, detected_polygon, False)
   #cv2.imshow("sub_target_image", sub_target_image)
@@ -300,11 +300,11 @@ def findTrasform(i, detected_polygon: Polygon, basis_polygon: Polygon, target_im
   y += shift_y
   shifted_rotated_scaled_basis_polygon = Polygon(zip(x,y))
 
-  print("detected_polygon", detected_polygon, file=log)
-  print("shifted_rotated_scaled_basis_polygon", shifted_rotated_scaled_basis_polygon, file=log)
+  #print("detected_polygon", detected_polygon, file=log)
+  #print("shifted_rotated_scaled_basis_polygon", shifted_rotated_scaled_basis_polygon, file=log)
 
 
-  print("_____trans_end______", file = log)
+  #print("_____trans_end______", file = log)
 
   res_dict = {'dx' : shift_x, 'dy' : shift_y, 'scale' : scale, 'angle' : angle, 'i' : i}
   transforms.append(Transform(res_dict))
@@ -337,7 +337,7 @@ for p in range (0, len(basis_polygons)):
                                  np.array([basis_polygons[p][(2*(i+1))%length], basis_polygons[p][(2*(i+1)+1)%length]])))
   basis_angles.append(bbasis_angles)
 
-print("basis angles", basis_angles, file = log)
+#print("basis angles", basis_angles, file = log)
 
 # Reading same image in another variable and  
 # converting to gray scale. 
@@ -385,7 +385,7 @@ _,threshold = cv2.threshold(img, 110, 255,
 contours, hierarchy =cv2.findContours(img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 contours = np.array(contours)[hierarchy [0][:, 2] != -1]
 
-print("contours count", len(contours), file = log)
+#print("contours count", len(contours), file = log)
 
 target_image = np.zeros_like(img)
 
@@ -399,7 +399,7 @@ if cv2.waitKey(0) & 0xFF == ord('q'):
 contours, hierarchy =cv2.findContours(target_image, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
 test_image = np.zeros_like(img)
 for c in contours:
-  print(c)
+  #print(c)
   cv2.drawContours(test_image, [c], 0, 255, -1)
 #cv2.imshow("cleared", test_image)
 #cv2.imwrite("cleared.png", test_image)
@@ -411,29 +411,29 @@ f= open("out.txt","w")
 M=0;
 results = []
 
-# print("contours", contours, file = log)
+# #print("contours", contours, file = log)
 # Searching through every region selected to  
 # find the required polygon. 
-#print("____________", file = log)
+##print("____________", file = log)
 for cnt in contours:
     area = cv2.contourArea(cnt) 
-    print("area", area, file = log)
+    #print("area", area, file = log)
     # Shortlisting the regions based on there area. 
     # >1 to avoid noise of 4 white pixels forming a square
     if area >= 1:  
         approx = cv2.approxPolyDP(cnt,  
                                   0.009 * cv2.arcLength(cnt, True), True)
 
-        print("_________", file = log)
+        #print("_________", file = log)
         
         
       
-        print("approx", approx, file = log)
+        #print("approx", approx, file = log)
         
 
         length = len(approx)
        
-        print("len approx", len(approx), file = log)
+        #print("len approx", len(approx), file = log)
         # forming the array of polygon's angles
         approx_angles = []
         for i in range (0, length):
@@ -444,20 +444,20 @@ for cnt in contours:
         for i in range(0, len(basis_angles)):
           res = correlateAngles(basis_angles[i], approx_angles)
           
-          print("res", res, file = log)
+          #print("res", res, file = log)
          
           if res[0] != -1000 and res[1] != -1000:
             
-            print("basis angles", basis_angles[i], file = log)
-            print("approx angles", approx_angles, file = log)
-            print("res", res, file = log)
-            print("basis ploygons", basis_polygons, file = log)
-            print("approx", approx, file = log)
+            #print("basis angles", basis_angles[i], file = log)
+            #print("approx angles", approx_angles, file = log)
+            #print("res", res, file = log)
+            #print("basis ploygons", basis_polygons, file = log)
+            #print("approx", approx, file = log)
 
             approx = np.roll(approx,res[0], axis=0)
             if res[1] == -1:
               approx = list(reversed(approx))
-            print("rolled approx", approx, file = log)
+            #print("rolled approx", approx, file = log)
 
             b_p = []
             for j in range(0,len(basis_polygons[i])-1, 2):
@@ -470,9 +470,9 @@ for cnt in contours:
               a_p.append((approx[j][0][0],approx[j][0][1]))
             detected_polygon = Polygon(a_p)
 
-            print("basis polygon", basis_polygon, file = log)
-            print("detected polygon", detected_polygon, file = log)
-            print("centroids", basis_polygon.centroid, detected_polygon.centroid, file = log)
+            #print("basis polygon", basis_polygon, file = log)
+            #print("detected polygon", detected_polygon, file = log)
+            #print("centroids", basis_polygon.centroid, detected_polygon.centroid, file = log)
 
             found_trasform = findTrasform(i, detected_polygon, basis_polygon, target_image)
 
@@ -481,16 +481,16 @@ for cnt in contours:
 
            
             M += 1
-print("detected shapes count:", M, file = log)
+#print("detected shapes count:", M, file = log)
 
 for trans in transforms:
   b_p = []
   for i in range(0,len(basis_polygons[trans.i])-1, 2):
     b_p.append([basis_polygons[trans.i][i], basis_polygons[trans.i][i+1]])
-  print("B_P", b_p, file = log)
+  #print("B_P", b_p, file = log)
   draw(inpt = img, gt = img, shape = b_p, transform = trans)
 
-print(results, file = log)
+#print(results, file = log)
 sys.stdout.write("%i\n"%M)
 for i in range (0,M):
   sys.stdout.write("%i, %f, %f, %f, %f\n" % (results[i][0], results[i][1], results[i][2], results[i][3], results[i][4]))
